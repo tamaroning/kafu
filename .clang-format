@@ -1,0 +1,30 @@
+---
+# clang-format configuration for C/C++ files in this repository.
+# Keep it conservative to avoid surprising diffs.
+BasedOnStyle: LLVM
+
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+
+ColumnLimit: 100
+
+BreakBeforeBraces: Attach
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+SortIncludes: Never
+ReflowComments: false
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+IndentPPDirectives: None
+PPIndentWidth: 2
+
+SpacesInContainerLiterals: false
+SpaceBeforeParens: ControlStatements
+...

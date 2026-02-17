@@ -1,0 +1,29 @@
+;; WITX version of the Kafu Helper API.
+
+(typename $buffer_size u32)
+(typename $kafu_errno
+  (enum (@witx tag u16)
+    $success
+    $invalid_argument
+    $invalid_encoding
+    $missing_memory
+    $busy
+    $runtime_error
+    $unsupported_operation
+    $too_large
+    $not_found
+  )
+)
+
+(module $kafu_helper
+  (import "memory" (memory))
+  ;; Utility function to convert image to tensor for ImageNet-style CNN preprocessing.
+  ;; Output buffer of size (height * width * 3 * 4) must be pre-allocated by the caller.
+  (@interface func (export "image_to_tensor")
+    (param $image_path string)
+    (param $height u32)
+    (param $width u32)
+    (param $out_buffer (@witx pointer u8))
+    (result $error (expected $buffer_size (error $kafu_errno)))
+  )
+)

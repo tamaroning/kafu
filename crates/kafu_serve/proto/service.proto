@@ -1,0 +1,76 @@
+syntax = "proto3";
+package kafu;
+
+service Command {
+    rpc Migrate (MigrateRequest) returns (MigrateResponse);
+    rpc CheckSnapshotCache (CheckSnapshotCacheRequest) returns (CheckSnapshotCacheResponse);
+    rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
+    // Leader -> follower heartbeat (push). Followers may use this to detect leader loss.
+    rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+message MigrationStackEntry {
+    string from_node_id = 1;
+    uint32 wasm_stack_height = 2;
+}
+
+// One page of Wasm linear memory delta (page size = 64KB, Wasm page size).
+// When data_compressed is true, data is an LZ4 block (compress_prepend_size) for transfer efficiency.
+message MemoryDeltaPage {
+    uint32 page_index = 1;
+    bytes data = 2;
+    bool data_compressed = 3;
+}
+
+// Represents a full Wasm linear memory image.
+// - `pages` is the target size in Wasm pages (64KB).
+// - When `compressed` is true, `data` is an LZ4 block (compress_prepend_size).
+message MemoryImage {
+    bytes data = 1;
+    bool compressed = 2;
+    uint64 pages = 3;
+    // Optional delta pages applied onto a cached baseline on the receiver.
+    // When set, `data` MAY be empty to save bandwidth.
+    repeated MemoryDeltaPage delta_pages = 4;
+}
+
+message MigrateRequest {
+    // SHA-256 digest (32 bytes) of the original Wasm binary.
+    // The receiver verifies this matches its own Wasm module before applying the migration.
+    bytes wasm_sha256 = 1;
+    repeated MigrationStackEntry migration_stack = 2;
+    // Full snapshot or delta-based transfer: always provided.
+    MemoryImage main_memory = 3;
+    MemoryImage snapify_memory = 4;
+}
+
+message CheckSnapshotCacheRequest {
+}
+
+message CheckSnapshotCacheResponse {
+    bool has_cache = 1;
+}
+
+message MigrateResponse {
+    bool success = 1;
+}
+
+message ShutdownRequest {
+    string from_node_id = 1;
+    string reason = 2;
+}
+
+message ShutdownResponse {
+    bool accepted = 1;
+}
+
+message HeartbeatRequest {
+    // Sender node id (leader).
+    string from_node_id = 1;
+    // True when the leader has started program execution.
+    bool execution_started = 2;
+}
+
+message HeartbeatResponse {
+    bool accepted = 1;
+}

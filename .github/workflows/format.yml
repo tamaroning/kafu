@@ -1,0 +1,79 @@
+name: Format
+
+on:
+  pull_request:
+    paths:
+      - '.clang-format'
+      - '.github/workflows/format.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '**/*.rs'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.cc'
+      - '**/*.cpp'
+      - '**/*.cxx'
+      - '**/*.hpp'
+      - '**/*.hxx'
+  push:
+    branches:
+      - main
+    paths:
+      - '.clang-format'
+      - '.github/workflows/format.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '**/*.rs'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.cc'
+      - '**/*.cpp'
+      - '**/*.cxx'
+      - '**/*.hpp'
+      - '**/*.hxx'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check Rust formatting
+        run: |
+          set -euxo pipefail
+          cargo fmt --all --check
+
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format
+          clang-format --version
+
+      - name: Check C/C++ formatting
+        run: |
+          set -euxo pipefail
+          mapfile -t files < <(git ls-files -- '*.c' '*.h' '*.cc' '*.cpp' '*.cxx' '*.hpp' '*.hxx')
+          if [ "${#files[@]}" -eq 0 ]; then
+            exit 0
+          fi
+          clang-format --dry-run --Werror "${files[@]}"

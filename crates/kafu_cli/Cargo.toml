@@ -1,0 +1,14 @@
+[package]
+name = "kafu_cli"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "kafu"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+kafu_config = { path = "../kafu_config" }

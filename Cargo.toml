@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "crates/kafu_config",
+    "crates/kafu_cli",
+    "crates/kafu_runtime",
+    "crates/kafu_serve",
+    "crates/kafu_kustomize",
+    "crates/kafu_clang",
+    "crates/kafu_singlenode",
+]
+resolver = "3"
+
+[workspace.package]
+license = "MIT OR Apache-2.0 WITH LLVM-exception"
+authors = ["Raiki Tamura"]
+version = "0.1.0"
+edition = "2024"

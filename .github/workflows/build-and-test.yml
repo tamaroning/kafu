@@ -1,0 +1,59 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install system dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libssl-dev \
+            openssl \
+            protobuf-compiler
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Install clippy
+        run: |
+          set -euxo pipefail
+          rustup component add clippy
+
+      - name: Run clippy
+        env:
+          CARGO_TERM_COLOR: always
+        run: |
+          set -euxo pipefail
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Run tests
+        env:
+          CARGO_TERM_COLOR: always
+        run: |
+          set -euxo pipefail
+          cargo test --workspace --locked

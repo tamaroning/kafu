@@ -1,0 +1,15 @@
+[package]
+name = "kafu_kustomize"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+kafu_config = { path = "../kafu_config" }
+tempfile = "3"
+tinytemplate = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"

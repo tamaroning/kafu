@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kafu-server
+  labels:
+    component: kafu-server
+spec:
+  nodeSelector:
+    kafu-node: "<dummy>"
+  containers:
+  - name: kafu-server
+    image: ghcr.io/tamaroning/kafu
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: kafu-config
+      mountPath: /etc/kafu
+      readOnly: true
+  volumes:
+  - name: kafu-config
+    configMap:
+      name: kafu-config

@@ -1,0 +1,106 @@
+name: Create Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.job.runs-on }}
+    env:
+      SDK_VERSION: ${{ github.event.release.tag_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { arch: x86_64, runs-on: ubuntu-latest, binaryen-arch: x86_64 }
+          - { arch: aarch64, runs-on: ubuntu-24.04-arm, binaryen-arch: aarch64 }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute release variables
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_version='${{ github.event.release.tag_name }}'
+          sdk_version_safe="${sdk_version//\//-}"
+          sdk_dir="kafu-sdk-${sdk_version_safe}"
+
+          echo "sdk_version=${sdk_version}" >> "$GITHUB_OUTPUT"
+          echo "sdk_version_safe=${sdk_version_safe}" >> "$GITHUB_OUTPUT"
+          echo "sdk_dir=${sdk_dir}" >> "$GITHUB_OUTPUT"
+
+          echo "SDK_VERSION=${sdk_version}" >> "$GITHUB_ENV"
+          echo "SDK_VERSION_SAFE=${sdk_version_safe}" >> "$GITHUB_ENV"
+          echo "SDK_DIR=${sdk_dir}" >> "$GITHUB_ENV"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libssl-dev \
+            openssl \
+            protobuf-compiler
+
+      - name: Build binaries
+        env:
+          CARGO_TERM_COLOR: always
+        run: |
+          set -euxo pipefail
+          cargo build --release --locked \
+            -p kafu_cli -p kafu_kustomize -p kafu_clang -p kafu_singlenode -p kafu_serve
+
+      - name: Create SDK directory structure
+        run: |
+          rm -rf "$SDK_DIR"
+          mkdir -p "$SDK_DIR/bin" "$SDK_DIR/libexec" "$SDK_DIR/include" "$SDK_DIR/share"
+
+      - name: Copy binaries
+        run: |
+          TARGET_DIR="target/release"
+
+          # Wrapper CLI goes into bin/
+          cp "$TARGET_DIR/kafu" "$SDK_DIR/bin/kafu"
+
+          # Subcommand binaries go into libexec/
+          LIBEXEC_NAMES=(kafu_kustomize kafu_clang kafu_singlenode kafu_serve)
+          for bin in "${LIBEXEC_NAMES[@]}"; do
+            cp "$TARGET_DIR/$bin" "$SDK_DIR/libexec/$bin"
+          done
+
+      - name: Copy header files
+        run: |
+          cp -r include/* "$SDK_DIR/include/"
+
+      - name: Create tarball
+        run: |
+          ARCH="${{ matrix.job.arch }}"
+          tar czf "kafu-sdk-${SDK_VERSION_SAFE}-${ARCH}-linux.tar.gz" "$SDK_DIR"
+
+      - name: Prepare standalone binaries
+        run: |
+          ARCH="${{ matrix.job.arch }}"
+          gzip -c target/release/kafu_kustomize > "kafu_kustomize-${SDK_VERSION_SAFE}-${ARCH}-linux.gz"
+          gzip -c target/release/kafu_serve > "kafu_serve-${SDK_VERSION_SAFE}-${ARCH}-linux.gz"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            kafu-sdk-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.tar.gz
+            kafu_kustomize-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.gz
+            kafu_serve-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

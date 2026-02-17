@@ -1,0 +1,18 @@
+# Name of the Kafu service.
+name: kafu-basic-example
+app:
+  # Path to the Wasm binary to run.
+  path: ./main.wasm
+  args:
+  - dummy
+  preopened_dir: .
+# Node list in the Kafu cluster.
+nodes:
+  cloud1: # Node ID
+    # IP address and port of the node.
+    address: 127.0.0.1
+    # Port of the node.
+    port: 50051
+  edge1:
+    address: 127.0.0.1
+    port: 50052

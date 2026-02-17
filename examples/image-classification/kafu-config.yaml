@@ -1,0 +1,12 @@
+name: kafu-image-classification-example
+app:
+  path: ./main.wasm
+  args: []
+  preopened_dir: .
+nodes:
+  edge:
+    address: 127.0.0.1
+    port: 50052
+  cloud:
+    address: 127.0.0.1
+    port: 50053

@@ -1,0 +1,8 @@
+[book]
+title = "Kafu Documentation"
+description = "A framework for building distributed services in the Cloud-Edge Continuum."
+authors = ["Raiki Tamura"]
+language = "en"
+
+[output.html]
+git-repository-url = "https://github.com/tamaroning/kafu/"

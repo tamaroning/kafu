@@ -1,0 +1,5 @@
+name: empty-cluster
+app:
+  path: ./main.wasm
+  args:
+nodes:

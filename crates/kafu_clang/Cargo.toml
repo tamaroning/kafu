@@ -1,0 +1,11 @@
+[package]
+name = "kafu_clang"
+version.workspace = true
+edition = "2024"
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+tempfile = "3"
+anyhow = "1"
