@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-28bcbf99.js";
+            window.path_to_searchindex_js = "searchindex-fa115377.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-156469e8.js"></script>
@@ -221,6 +221,9 @@
 </li>
 <li>
 <p><strong><code>port</code></strong> (required): An integer (u16) representing the port number on which the node listens for Kafu runtime communication.</p>
+</li>
+<li>
+<p><strong><code>placement</code></strong> (optional): A string representing a logical placement group for this node when integrating with orchestrators such as Kubernetes. The core Kafu runtime does not use this field directly, but tools like <code>kafu kustomize</code> map it to platform-specific concepts (e.g., Kubernetes node labels). When omitted, such tools should fall back to using the node ID as the placement key, preserving the existing 1:1 behavior between node ID and physical node.</p>
 </li>
 </ul>
 <h3 id="cluster-configuration"><a class="header" href="#cluster-configuration">Cluster Configuration</a></h3>
