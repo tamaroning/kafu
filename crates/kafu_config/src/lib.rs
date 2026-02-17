@@ -230,4 +230,15 @@ pub struct NodeConfig {
     pub address: String,
     /// Port of the node.
     pub port: u16,
+    /// Optional logical placement group for this node when running on orchestrators such as Kubernetes.
+    ///
+    /// This value is not used by the core runtime itself, but by integration tools
+    /// (e.g. `kafu kustomize`) to decide how nodes are placed onto physical machines.
+    /// For example, when generating Kubernetes manifests, this value can be mapped to
+    /// a node label so that multiple logical Kafu nodes (Pods) share the same
+    /// underlying Kubernetes node.
+    ///
+    /// Backward compatible: if omitted, tools should fall back to the node ID.
+    #[serde(default)]
+    pub placement: Option<String>,
 }

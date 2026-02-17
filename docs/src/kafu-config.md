@@ -38,6 +38,8 @@ The first node in the `nodes` map is responsible for starting the execution of t
 
 - **`port`** (required): An integer (u16) representing the port number on which the node listens for Kafu runtime communication.
 
+- **`placement`** (optional): A string representing a logical placement group for this node when integrating with orchestrators such as Kubernetes. The core Kafu runtime does not use this field directly, but tools like `kafu kustomize` map it to platform-specific concepts (e.g., Kubernetes node labels). When omitted, such tools should fall back to using the node ID as the placement key, preserving the existing 1:1 behavior between node ID and physical node.
+
 ### Cluster Configuration
 
 The optional `cluster` section controls cluster-level behavior.

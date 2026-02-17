@@ -17,6 +17,9 @@ enum Commands {
     Build {
         /// Path to the Kafu config file.
         path: PathBuf,
+        /// Override container image used for kafu-server Pods.
+        #[clap(long)]
+        image: Option<String>,
     },
 }
 
@@ -27,10 +30,10 @@ fn main() -> Result<(), Error> {
     let kustomize_cmd = detect_kustomize_command()?;
 
     match cli.subcommand {
-        Commands::Build { path } => {
+        Commands::Build { path, image } => {
             let config = KafuConfig::load(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to load Kafu config: {}", e))?;
-            let output = generate_manifest(&config, kustomize_cmd)?;
+            let output = generate_manifest(&config, kustomize_cmd, image.as_deref())?;
             println!("{}", output);
         }
     }

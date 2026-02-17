@@ -5,11 +5,11 @@ app:
   preopened_dir: .
 nodes:
   node1:
-    address: 127.0.0.1
+    address: kafu-server-node1
     port: 50051
   node2:
-    address: 127.0.0.1
+    address: kafu-server-node2
     port: 50052
   node3:
-    address: 127.0.0.1
+    address: kafu-server-node3
     port: 50053

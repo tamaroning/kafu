@@ -15,6 +15,9 @@ spec:
     - name: kafu-config
       mountPath: /etc/kafu
       readOnly: true
+    env:
+    - name: RUST_LOG
+      value: info
   volumes:
   - name: kafu-config
     configMap:
