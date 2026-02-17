@@ -12,14 +12,17 @@ data:
       preopened_dir: .
     nodes:
       node1:
-        address: 127.0.0.1
+        address: kafu-server-node1
         port: 50051
+        placement: null
       node2:
-        address: 127.0.0.1
+        address: kafu-server-node2
         port: 50052
+        placement: null
       node3:
-        address: 127.0.0.1
+        address: kafu-server-node3
         port: 50053
+        placement: null
     cluster:
       heartbeat:
         follower_on_coordinator_lost: shutdown_self
@@ -52,6 +55,9 @@ spec:
     - --node-id
     - node1
     - /etc/kafu/kafu-config.yaml
+    env:
+    - name: RUST_LOG
+      value: info
     image: ghcr.io/tamaroning/kafu
     imagePullPolicy: IfNotPresent
     name: kafu-server
@@ -90,6 +96,9 @@ spec:
     - --node-id
     - node2
     - /etc/kafu/kafu-config.yaml
+    env:
+    - name: RUST_LOG
+      value: info
     image: ghcr.io/tamaroning/kafu
     imagePullPolicy: IfNotPresent
     name: kafu-server
@@ -128,6 +137,9 @@ spec:
     - --node-id
     - node3
     - /etc/kafu/kafu-config.yaml
+    env:
+    - name: RUST_LOG
+      value: info
     image: ghcr.io/tamaroning/kafu
     imagePullPolicy: IfNotPresent
     name: kafu-server

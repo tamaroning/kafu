@@ -4,7 +4,7 @@ metadata:
   name: kafu-server
 spec:
   nodeSelector:
-    kafu-node: {node_id}
+    kafu-node: {placement}
   containers:
   - name: kafu-server
     command:
