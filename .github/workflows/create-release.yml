@@ -89,18 +89,10 @@ jobs:
           ARCH="${{ matrix.job.arch }}"
           tar czf "kafu-sdk-${SDK_VERSION_SAFE}-${ARCH}-linux.tar.gz" "$SDK_DIR"
 
-      - name: Prepare standalone binaries
-        run: |
-          ARCH="${{ matrix.job.arch }}"
-          gzip -c target/release/kafu_kustomize > "kafu_kustomize-${SDK_VERSION_SAFE}-${ARCH}-linux.gz"
-          gzip -c target/release/kafu_serve > "kafu_serve-${SDK_VERSION_SAFE}-${ARCH}-linux.gz"
-
       - name: Upload release asset
         uses: softprops/action-gh-release@v1
         with:
           files: |
             kafu-sdk-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.tar.gz
-            kafu_kustomize-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.gz
-            kafu_serve-${{ steps.vars.outputs.sdk_version_safe }}-${{ matrix.job.arch }}-linux.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
