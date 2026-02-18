@@ -3,7 +3,7 @@ use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberI
 fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
     let subscriber = tracing_subscriber::Registry::default()
         .with(fmt::layer().with_writer(std::io::stderr).with_target(false))
-        .with(EnvFilter::from_default_env());
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")));
     subscriber.try_init()?;
     Ok(())
 }
