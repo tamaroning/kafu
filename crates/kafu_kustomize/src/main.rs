@@ -1,9 +1,10 @@
-use std::{path::PathBuf, process::Command};
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use anyhow::Error;
 use clap::{Parser, Subcommand};
 use kafu_config::KafuConfig;
-use kafu_kustomize::generate_manifest;
+use kafu_kustomize::{KustomizeCommandBuilder, generate_manifest};
 
 /// A tool to generate Kubernetes manifest from Kafu config.
 #[derive(Parser)]
@@ -40,22 +41,26 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn detect_kustomize_command() -> Result<Box<dyn Fn() -> Command>, Error> {
-    // First, try standalone kustomize command
+fn detect_kustomize_command() -> Result<KustomizeCommandBuilder, Error> {
+    // First, try standalone kustomize command (usage: kustomize build <path>)
     if Command::new("kustomize").arg("version").output().is_ok() {
-        return Ok(Box::new(|| Command::new("kustomize")));
+        return Ok(Box::new(|path: &Path| {
+            let mut cmd = Command::new("kustomize");
+            cmd.arg("build").arg(path);
+            cmd
+        }));
     }
 
-    // If not available, try kubectl kustomize
+    // If not available, try kubectl kustomize (usage: kubectl kustomize <path>; no "build" subcommand)
     if Command::new("kubectl")
         .arg("kustomize")
         .arg("--help")
         .output()
         .is_ok()
     {
-        return Ok(Box::new(|| {
+        return Ok(Box::new(|path: &Path| {
             let mut cmd = Command::new("kubectl");
-            cmd.arg("kustomize");
+            cmd.arg("kustomize").arg(path);
             cmd
         }));
     }

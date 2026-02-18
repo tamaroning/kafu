@@ -1,9 +1,13 @@
+use std::path::Path;
 use std::process::Command;
 
 use anyhow::{Error, anyhow};
 use kafu_config::KafuConfig;
 use serde::Serialize;
 use tinytemplate::TinyTemplate;
+
+/// Type of the function that builds a kustomize command for a given directory path.
+pub type KustomizeCommandBuilder = Box<dyn Fn(&Path) -> Command>;
 
 #[derive(Serialize)]
 struct Context {
@@ -18,7 +22,7 @@ struct Context {
 
 pub fn generate_manifest(
     config: &KafuConfig,
-    kustomize_cmd: Box<dyn Fn() -> Command>,
+    kustomize_cmd: KustomizeCommandBuilder,
     image_override: Option<&str>,
 ) -> Result<String, Error> {
     // Serialize the config to YAML and build a ConfigMap resource.
@@ -90,8 +94,8 @@ pub fn generate_manifest(
         )?;
         std::fs::write(node_dir.join("patch.yaml"), tt.render("patch", &context)?)?;
 
-        // invoke kustomize build
-        let output = kustomize_cmd().arg("build").arg(&node_dir).output()?;
+        // Invoke kustomize build (standalone) or kubectl kustomize (path-only).
+        let output = kustomize_cmd(node_dir.as_path()).output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
