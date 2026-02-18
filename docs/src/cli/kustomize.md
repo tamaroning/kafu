@@ -36,6 +36,11 @@ Generate Kubernetes manifests to stdout.
 
 - `<CONFIG_PATH>` (required): Path to the Kafu configuration file.
 
+## Options
+
+- `--image <IMAGE>`: Override the container image used for `kafu-server` Pods.
+- `--instance-id <ID>`: Deploy the same Kafu config multiple times in the same namespace by making resource names unique and adding an instance label.
+
 ## Output
 
 The command outputs a Kubernetes manifest to stdout. You can redirect it to a file:
@@ -57,6 +62,8 @@ For each node defined in the config, the generated manifests include:
 - A **Pod** to run the node
 - A **Service** for node-to-node communication
 
+Additionally, the manifest includes a shared **ConfigMap** containing the Kafu config YAML.
+
 ## Configuration
 
 The command uses the same configuration format as other Kafu commands. For details, see [Kafu Config](../kafu-config.md).
@@ -68,6 +75,10 @@ For Kubernetes deployments, it's recommended to use `app.url` to download WASM m
 ```sh
 # Generate manifest and save to file
 kafu kustomize build kafu-config.yaml > kafu-manifest.yaml
+
+# Deploy the same config multiple times in the same namespace
+kafu kustomize build kafu-config.yaml --instance-id staging > kafu-manifest-staging.yaml
+kafu kustomize build kafu-config.yaml --instance-id dev > kafu-manifest-dev.yaml
 
 # Apply to Kubernetes cluster
 kubectl apply -f kafu-manifest.yaml

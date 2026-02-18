@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kafu-config
+  name: kafu-config-staging
   labels:
     kafu-service-name: basic
+    kafu-instance: staging
 data:
   kafu-config.yaml: |
     name: basic
@@ -13,13 +14,13 @@ data:
       preopened_dir: .
     nodes:
       node1:
-        address: kafu-server-node1
+        address: staging-kafu-server-node1
         port: 50051
       node2:
-        address: kafu-server-node2
+        address: staging-kafu-server-node2
         port: 50052
       node3:
-        address: kafu-server-node3
+        address: staging-kafu-server-node3
         port: 50053
     cluster:
       heartbeat:
@@ -32,13 +33,14 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafu-server-node1
+  name: staging-kafu-server-node1
 spec:
   clusterIP: None
   ports:
   - port: 50051
   selector:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node1
     kafu-service-name: basic
 ---
@@ -47,9 +49,10 @@ kind: Pod
 metadata:
   labels:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node1
     kafu-service-name: basic
-  name: kafu-server-node1
+  name: staging-kafu-server-node1
 spec:
   containers:
   - command:
@@ -71,19 +74,20 @@ spec:
     kafu-node: node1
   volumes:
   - configMap:
-      name: kafu-config
+      name: kafu-config-staging
     name: kafu-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafu-server-node2
+  name: staging-kafu-server-node2
 spec:
   clusterIP: None
   ports:
   - port: 50051
   selector:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node2
     kafu-service-name: basic
 ---
@@ -92,9 +96,10 @@ kind: Pod
 metadata:
   labels:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node2
     kafu-service-name: basic
-  name: kafu-server-node2
+  name: staging-kafu-server-node2
 spec:
   containers:
   - command:
@@ -116,19 +121,20 @@ spec:
     kafu-node: node2
   volumes:
   - configMap:
-      name: kafu-config
+      name: kafu-config-staging
     name: kafu-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafu-server-node3
+  name: staging-kafu-server-node3
 spec:
   clusterIP: None
   ports:
   - port: 50051
   selector:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node3
     kafu-service-name: basic
 ---
@@ -137,9 +143,10 @@ kind: Pod
 metadata:
   labels:
     component: kafu-server
+    kafu-instance: staging
     kafu-node-id: node3
     kafu-service-name: basic
-  name: kafu-server-node3
+  name: staging-kafu-server-node3
 spec:
   containers:
   - command:
@@ -161,5 +168,5 @@ spec:
     kafu-node: node3
   volumes:
   - configMap:
-      name: kafu-config
+      name: kafu-config-staging
     name: kafu-config

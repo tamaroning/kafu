@@ -21,6 +21,9 @@ enum Commands {
         /// Override container image used for kafu-server Pods.
         #[clap(long)]
         image: Option<String>,
+        /// Instance ID so the same config can be deployed multiple times in one namespace (unique resource names and labels).
+        #[clap(long)]
+        instance_id: Option<String>,
     },
 }
 
@@ -31,10 +34,19 @@ fn main() -> Result<(), Error> {
     let kustomize_cmd = detect_kustomize_command()?;
 
     match cli.subcommand {
-        Commands::Build { path, image } => {
+        Commands::Build {
+            path,
+            image,
+            instance_id,
+        } => {
             let config = KafuConfig::load(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to load Kafu config: {}", e))?;
-            let output = generate_manifest(&config, kustomize_cmd, image.as_deref())?;
+            let output = generate_manifest(
+                &config,
+                kustomize_cmd,
+                image.as_deref(),
+                instance_id.as_deref(),
+            )?;
             println!("{}", output);
         }
     }

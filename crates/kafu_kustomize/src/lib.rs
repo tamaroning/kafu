@@ -14,20 +14,53 @@ struct Context {
     /// Logical node ID (key of the nodes map in KafuConfig).
     node_id: String,
     /// Placement group for this node used when targeting Kubernetes.
-    ///
-    /// This is typically mapped to a Kubernetes node label so that multiple logical
-    /// Kafu nodes can share the same physical Kubernetes node.
     placement: String,
+    /// Sanitized config name for use in labels (kafu-service-name).
+    config_name: String,
+    /// ConfigMap resource name. Must match both the emitted ConfigMap metadata.name and the Pod volume configMap.name.
+    configmap_name: String,
+    /// Sanitized instance ID. Empty when not set; template uses "{{ if instance_id }}" for optional namePrefix and kafu-instance label.
+    instance_id: String,
 }
 
 pub fn generate_manifest(
     config: &KafuConfig,
     kustomize_cmd: KustomizeCommandBuilder,
     image_override: Option<&str>,
+    instance_id: Option<&str>,
 ) -> Result<String, Error> {
+    let configmap_name = instance_id
+        .map(|id| format!("kafu-config-{}", sanitize_label_value(id)))
+        .unwrap_or_else(|| "kafu-config".to_string());
+    let instance_id_sanitized = instance_id.map(sanitize_label_value).unwrap_or_default();
+
+    // When instance_id is set, update node addresses in the config to match the prefixed Service names.
+    let config_for_cm = if let Some(instance_id_val) = instance_id {
+        let mut config_clone = config.clone();
+        for (node_id, node_config) in config_clone.nodes.iter_mut() {
+            // Update address: kafu-server-<node-id> -> <instance-id>-kafu-server-<node-id>
+            // Also handle FQDN: kafu-server-<node-id>.<namespace>.svc.cluster.local -> <instance-id>-kafu-server-<node-id>.<namespace>.svc.cluster.local
+            let prefix = format!("kafu-server-{}", node_id);
+            if node_config.address.starts_with(&prefix) {
+                let suffix = &node_config.address[prefix.len()..];
+                node_config.address =
+                    format!("{}-kafu-server-{}{}", instance_id_val, node_id, suffix);
+            }
+        }
+        config_clone
+    } else {
+        config.clone()
+    };
+
     // Serialize the config to YAML and build a ConfigMap resource.
-    let config_yaml = serde_yaml::to_string(config)?;
-    let configmap_yaml = build_configmap_yaml(&config_yaml);
+    let config_yaml = serde_yaml::to_string(&config_for_cm)?;
+    let config_name_sanitized = sanitize_label_value(&config.name);
+    let configmap_yaml = build_configmap_yaml(
+        &config_yaml,
+        &configmap_name,
+        &config_name_sanitized,
+        &instance_id_sanitized,
+    )?;
 
     // Prepare a temporary directory.
     let temp_dir = tempfile::tempdir()?;
@@ -76,13 +109,13 @@ pub fn generate_manifest(
 
         let context = Context {
             node_id: node_id.clone(),
-            // If placement is not specified, fall back to node_id so that existing
-            // configs behave exactly as before (1:1 mapping between node ID and
-            // Kubernetes node label).
             placement: node_config
                 .placement
                 .clone()
                 .unwrap_or_else(|| node_id.clone()),
+            config_name: sanitize_label_value(&config.name),
+            configmap_name: configmap_name.clone(),
+            instance_id: instance_id_sanitized.clone(),
         };
 
         // render
@@ -113,25 +146,72 @@ pub fn generate_manifest(
     Ok(manifest)
 }
 
-/// Build a ConfigMap YAML resource embedding the given kafu config content.
-fn build_configmap_yaml(config_yaml: &str) -> String {
-    let mut result = String::new();
-    result.push_str("apiVersion: v1\n");
-    result.push_str("kind: ConfigMap\n");
-    result.push_str("metadata:\n");
-    result.push_str("  name: kafu-config\n");
-    result.push_str("data:\n");
-    result.push_str("  kafu-config.yaml: |\n");
-    for line in config_yaml.lines() {
-        if line.is_empty() {
-            result.push('\n');
-        } else {
-            result.push_str("    ");
-            result.push_str(line);
-            result.push('\n');
-        }
+/// Sanitize a string for use as a Kubernetes label value (max 63 chars, alphanumeric at start/end).
+fn sanitize_label_value(s: &str) -> String {
+    const MAX_LEN: usize = 63;
+    let mut out: String = s
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    out = out
+        .trim_matches(|c| c == '-' || c == '_' || c == '.')
+        .to_string();
+    if out.len() > MAX_LEN {
+        out.truncate(MAX_LEN);
+        out = out
+            .trim_end_matches(|c: char| !c.is_ascii_alphanumeric())
+            .to_string();
     }
-    result
+    if out.is_empty() {
+        "default".to_string()
+    } else {
+        out
+    }
+}
+
+/// Build a ConfigMap YAML resource embedding the given kafu config content.
+/// Labels match Pod labels except kafu-node-id (component, kafu-service-name, and optionally kafu-instance).
+fn build_configmap_yaml(
+    config_yaml: &str,
+    configmap_name: &str,
+    config_name: &str,
+    instance_id: &str,
+) -> Result<String, Error> {
+    let mut config_content: String = config_yaml
+        .lines()
+        .map(|line| {
+            if line.is_empty() {
+                "\n".to_string()
+            } else {
+                format!("    {}\n", line)
+            }
+        })
+        .collect();
+    if config_content.ends_with('\n') {
+        config_content.pop();
+    }
+    let mut tt = TinyTemplate::new();
+    tt.add_template("configmap", include_str!("../templates/configmap.yaml.tpl"))?;
+    #[derive(Serialize)]
+    struct ConfigMapContext<'a> {
+        configmap_name: &'a str,
+        config_content: &'a str,
+        config_name: &'a str,
+        instance_id: &'a str,
+    }
+    let context = ConfigMapContext {
+        configmap_name,
+        config_content: &config_content,
+        config_name,
+        instance_id,
+    };
+    Ok(tt.render("configmap", &context)?)
 }
 
 /// Override the container image field in the base Pod template.
@@ -165,4 +245,36 @@ fn override_pod_image(pod_yaml: &str, image: &str) -> Result<String, Error> {
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanitize_label_value_valid() {
+        assert_eq!(sanitize_label_value("basic"), "basic");
+        assert_eq!(sanitize_label_value("my-app"), "my-app");
+        assert_eq!(sanitize_label_value("a"), "a");
+    }
+
+    #[test]
+    fn sanitize_label_value_invalid_chars() {
+        assert_eq!(sanitize_label_value("my app"), "my-app");
+        assert_eq!(sanitize_label_value("foo/bar"), "foo-bar");
+    }
+
+    #[test]
+    fn sanitize_label_value_empty_fallback() {
+        assert_eq!(sanitize_label_value(""), "default");
+        assert_eq!(sanitize_label_value("---"), "default");
+    }
+
+    #[test]
+    fn sanitize_label_value_truncate() {
+        let long = "a".repeat(70);
+        let got = sanitize_label_value(&long);
+        assert!(got.len() <= 63);
+        assert!(!got.is_empty());
+    }
 }

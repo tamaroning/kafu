@@ -213,13 +213,16 @@ pub struct AppConfig {
     /// Path to the Wasm binary to run.
     /// If relative path is specified, it is relative to the directory where the Kafu config file is located.
     /// condition: Only one of path or url must be specified
+    #[serde(skip_serializing_if = "Option::is_none")]
     path: Option<PathBuf>,
     /// URL of the Wasm binary to run.
     /// condition: Only one of path or url must be specified
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     /// Arguments to pass to the Wasm binary.
     pub args: Vec<String>,
     /// Preopened directory for the Wasm binary.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preopened_dir: Option<PathBuf>,
 }
 
@@ -239,6 +242,6 @@ pub struct NodeConfig {
     /// underlying Kubernetes node.
     ///
     /// Backward compatible: if omitted, tools should fall back to the node ID.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub placement: Option<String>,
 }

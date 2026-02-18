@@ -25,6 +25,10 @@ In the `nodes` section, you can use Kubernetes service names for node addresses.
 - `kafu-server-<node-id>.<namespace>.svc.cluster.local` (fully qualified)
 - `kafu-server-<node-id>` (within the same namespace)
 
+If you deploy multiple instances of the same Kafu config in the same namespace using `--instance-id`, resource names get a prefix and Service names become:
+
+- `<instance-id>-kafu-server-<node-id>`
+
 ### Example Configuration
 
 ```yaml
@@ -52,6 +56,17 @@ kafu kustomize build kafu-config.yaml
 ```
 
 This command generates Pod and Service resources for each node defined in your configuration. For detailed information about the generated resources, see [Kafu Kustomize](../cli/kustomize.md).
+
+### Deploying Multiple Instances (Optional)
+
+If you want to deploy the same Kafu config multiple times in the same namespace, pass an instance ID:
+
+```sh
+kafu kustomize build kafu-config.yaml --instance-id staging > kafu-manifest-staging.yaml
+kafu kustomize build kafu-config.yaml --instance-id dev > kafu-manifest-dev.yaml
+```
+
+This makes resource names unique (via a name prefix) and adds the `kafu-instance=<instance-id>` label to Pods and Services, so each Service selects only Pods from the same instance.
 
 ### Saving the Manifest
 
@@ -86,6 +101,20 @@ kubectl get services -l component=kafu-server
 
 # Check Pod logs
 kubectl logs -l component=kafu-server --all-containers=true
+```
+
+If you used `--instance-id`, you can additionally filter by instance:
+
+```sh
+kubectl get pods -l component=kafu-server,kafu-instance=staging
+kubectl get services -l component=kafu-server,kafu-instance=staging
+```
+
+Note: the generated ConfigMap is labeled with `kafu-service-name=<service-name>` (and `kafu-instance=<instance-id>` when set), so you can list it like:
+
+```sh
+kubectl get configmaps -l kafu-service-name=kafu-k8s-example
+kubectl get configmaps -l kafu-service-name=kafu-k8s-example,kafu-instance=staging
 ```
 
 ## Node Labeling

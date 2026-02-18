@@ -1,7 +1,8 @@
 resources:
 - ../../bases
 
-nameSuffix: -{node_id}
+{{ if instance_id }}namePrefix: {instance_id}-
+{{ endif }}nameSuffix: -{node_id}
 
 patches:
 - path: patch.yaml
