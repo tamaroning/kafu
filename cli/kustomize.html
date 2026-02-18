@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fa115377.js";
+            window.path_to_searchindex_js = "../searchindex-36f8e979.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-156469e8.js"></script>
@@ -200,6 +200,11 @@
 <ul>
 <li><code>&lt;CONFIG_PATH&gt;</code> (required): Path to the Kafu configuration file.</li>
 </ul>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<ul>
+<li><code>--image &lt;IMAGE&gt;</code>: Override the container image used for <code>kafu-server</code> Pods.</li>
+<li><code>--instance-id &lt;ID&gt;</code>: Deploy the same Kafu config multiple times in the same namespace by making resource names unique and adding an instance label.</li>
+</ul>
 <h2 id="output"><a class="header" href="#output">Output</a></h2>
 <p>The command outputs a Kubernetes manifest to stdout. You can redirect it to a file:</p>
 <pre><code class="language-sh">kafu kustomize build kafu-config.yaml &gt; ./kafu-manifest.yaml
@@ -213,12 +218,17 @@
 <li>A <strong>Pod</strong> to run the node</li>
 <li>A <strong>Service</strong> for node-to-node communication</li>
 </ul>
+<p>Additionally, the manifest includes a shared <strong>ConfigMap</strong> containing the Kafu config YAML.</p>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <p>The command uses the same configuration format as other Kafu commands. For details, see <a href="../kafu-config.html">Kafu Config</a>.</p>
 <p>For Kubernetes deployments, it’s recommended to use <code>app.url</code> to download WASM modules from a URL (e.g., from object storage like S3 or GCS) rather than <code>app.path</code>.</p>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <pre><code class="language-sh"># Generate manifest and save to file
 kafu kustomize build kafu-config.yaml &gt; kafu-manifest.yaml
+
+# Deploy the same config multiple times in the same namespace
+kafu kustomize build kafu-config.yaml --instance-id staging &gt; kafu-manifest-staging.yaml
+kafu kustomize build kafu-config.yaml --instance-id dev &gt; kafu-manifest-dev.yaml
 
 # Apply to Kubernetes cluster
 kubectl apply -f kafu-manifest.yaml
