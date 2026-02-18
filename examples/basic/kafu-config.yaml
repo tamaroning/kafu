@@ -2,16 +2,16 @@
 name: kafu-basic-example
 app:
   # Path to the Wasm binary to run.
+  # If a relative path is specified, it is resolved relative to the directory where the `kafu-config.yaml` file is located.
   path: ./main.wasm
-  args:
-  - dummy
+  args: []
   preopened_dir: .
 # Node list in the Kafu cluster.
+# The first node (cloud1) starts the execution of the WebAssembly binary.
 nodes:
   cloud1: # Node ID
-    # IP address and port of the node.
+    # Set localhost addresses to run the both servers on the same machine.
     address: 127.0.0.1
-    # Port of the node.
     port: 50051
   edge1:
     address: 127.0.0.1

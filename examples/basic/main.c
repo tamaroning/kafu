@@ -15,8 +15,6 @@ void f() {
   printf("Hello, from cloud\n");
   fflush(stdout);
   g();
-  printf("Hello, from cloud!\n");
-  fflush(stdout);
 }
 
 KAFU_DEST(g, "edge1")
